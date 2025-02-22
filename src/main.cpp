@@ -76,11 +76,21 @@ void Transaction::print() const
 {
 	std::cout << "ACCOUNT #: " << m_account_number;
 
+	std::locale original_locale = std::cout.getloc(); // save current format
+
 	std::cout.imbue( std::locale( "en_US.UTF-8" ) ); // format output
 
-	std::cout << " | AMOUNT: " << ( m_amount < 0 ? "-$" : "$" )
+	//std::cout << " | AMOUNT: " << ( m_amount < 0 ? "-$" : "$" )
 
-		<< std::put_money( std::abs( m_amount ) );
+		//<< std::put_money( std::abs( m_amount ) );
+
+	std::cout << " | AMOUNT: " << ( m_amount < 0 ? "$(" : "$" )
+		
+		<< std::put_money( std::abs( m_amount ) )
+		
+		<< ( m_amount < 0 ? ")" : "" );
+
+	std::cout.imbue( original_locale ); // restore the original format
 
 	std::cout << " | DESC: " << m_desc;
 
@@ -98,7 +108,7 @@ class TransactionNode
 
 		std::unique_ptr< TransactionNode > m_next; //
 
-		std::unique_ptr < TransactionNode > m_prev; //
+		TransactionNode* m_prev; //
 };
 
 // initialize
@@ -114,8 +124,75 @@ TransactionNode::TransactionNode( const Transaction& transaction )
 //
 class TransactionHistory
 {
-	//
+	public:
+
+		TransactionHistory(); // initialize
+
+		// add a new transaction at the end of the list
+		void addTransaction( const Transaction& transaction );
+
+		// print the entire transaction history
+		void print() const;
+
+	private:
+
+		std::unique_ptr< TransactionNode > m_head; // head of the list
+
+		TransactionNode* m_tail; // tail of the list
 };
+
+// initialize
+TransactionHistory::TransactionHistory()
+
+	: m_head( nullptr ), m_tail( nullptr )
+{
+	//
+}
+
+// add a new transaction at the end of the list
+void TransactionHistory::addTransaction( const Transaction& transaction )
+{
+	// initialize new transaction node
+	std::unique_ptr< TransactionNode > new_node =
+
+		std::make_unique< TransactionNode >( transaction );
+
+	if( !m_tail ) // if the list is empty
+	{
+		m_head = std::move( new_node ); // m_head takes ownership
+
+		m_tail = m_head.get(); // m_tail points to the last node
+
+	} else
+		{
+			m_tail -> m_next = std::move( new_node ); // move ownership to m_next
+
+			m_tail -> m_next -> m_prev = m_tail; // set previous pointer
+
+			m_tail = m_tail -> m_next.get(); // update tail
+		}
+}
+
+// print the entire transaction history
+void TransactionHistory::print() const
+{
+	// check if the list is empty
+	if( !m_head )
+	{
+		// there is nothing to print
+		return;
+	}
+	// start from the head of the list
+	TransactionNode* current_transaction = m_head.get();
+
+	// iterate through the list and print each transaction
+	while( current_transaction )
+	{
+		current_transaction -> m_transaction -> print(); // print transaction details
+
+		current_transaction = current_transaction -> m_next.get(); // step
+	}
+}
 
 //
 class IAccount
