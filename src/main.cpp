@@ -6,6 +6,8 @@
 #include <sstream>
 #include <ctime>
 #include <memory>
+#include <unordered_set>
+#include <random>
 
 //
 std::string generateTimestamp()
@@ -195,46 +197,95 @@ void TransactionHistory::print() const
 }
 
 //
+static std::unordered_set< uint32_t > generated_account_numbers;
+
+//
+uint32_t generateAccountNumber()
+{
+	std::random_device random_device; //
+
+	std::mt19937 random_generator( random_device() ); //
+
+	std::uniform_int_distribution<> rng_distribution( 100000000, 999999999 ); //
+
+	uint32_t new_account_number;
+
+	do {
+
+		new_account_number = rng_distribution( random_generator ); //
+
+	} while( generated_account_numbers.find( new_account_number )
+
+		!= generated_account_numbers.end() ); //
+
+	generated_account_numbers.insert( new_account_number ); //
+
+	return new_account_number;
+}
+
+//
 class IAccount
 {
-	//
+	public:
+	
+		virtual ~IAccount() = default; // deallocate
+
+		virtual uint32_t getAccountNumber() const = 0; //
+
+		virtual int64_t getAccountBalance() const = 0; //
 };
 
 //
 class BAccount : public IAccount
 {
-	//
+	public:
+
+		BAccount( uint32_t account_number, int64_t current_balance = 0,
+			
+			TransactionHistory&& transaction_history = TransactionHistory() ); //
+
+		virtual ~BAccount(); //
+
+		virtual uint32_t getAccountNumber() const override; //
+
+		virtual int64_t getAccountBalance() const override; //
+
+	private:
+
+		uint32_t m_account_number; //
+
+		int64_t m_current_balance; //
+
+		TransactionHistory m_transaction_history {}; //
+
+		// link to the user
 };
 
-//
-class CheckingAccount : public BAccount
-{
-	//
-};
+// initialize
+BAccount::BAccount( uint32_t account_number, int64_t current_balance,
+
+	TransactionHistory&& transaction_history )
+
+	: m_account_number( account_number ),
+
+	m_current_balance( current_balance ),
+
+	m_transaction_history( std::move( transaction_history ) ) { }
 
 //
-class SavingsAccount : public BAccount
-{
-	//
-};
+BAccount::~BAccount() { }
 
 //
-class AccountNode
+uint32_t BAccount::getAccountNumber() const
 {
-	//
-};
+	return m_account_number;
+}
 
 //
-class AccountRegistry
+int64_t BAccount::getAccountBalance() const
 {
-	//
-};
-
-//
-class UserProfile
-{
-	//
-};
+	return m_current_balance;
+}
 
 //
 int main()
