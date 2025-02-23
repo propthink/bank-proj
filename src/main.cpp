@@ -238,6 +238,8 @@ class IAccount
 
 		virtual bool withdraw( int64_t withdraw_amount ) = 0; //
 
+		virtual bool transfer( IAccount& dest_account, int64_t transfer_amount ) = 0; //
+
 		virtual void printAccountInfo() const = 0; //
 
 		virtual void printAllTransactions() const = 0; //
@@ -259,6 +261,8 @@ class BAccount : public IAccount
 		virtual bool deposit( int64_t deposit_amount ) override; //
 
 		virtual bool withdraw( int64_t withdraw_amount ) override; //
+
+		virtual bool transfer( IAccount& dest_account, int64_t transfer_amount ) override; //
 
 		virtual void printAccountInfo() const override; //
 
@@ -341,6 +345,32 @@ bool BAccount::withdraw( int64_t withdraw_amount )
 
 		Transaction( m_account_number, -( withdraw_amount ) ) );
 
+	return true;
+}
+
+//
+bool BAccount::transfer( IAccount& dest_account, int64_t transfer_amount )
+{
+	// check if the transfer amount is valid
+	if( transfer_amount <= 0 )
+	{
+		// invalid transfer
+		return false;
+	}
+	// withdraw from the current account (this account)
+	if( !this -> withdraw( transfer_amount ) )
+	{
+		// invalid transfer
+		return false;
+	}
+	// deposit into the destination account
+	if( !dest_account.deposit( transfer_amount ) )
+	{
+		// invalid transfer
+		this -> deposit( transfer_amount ); // restore the withdrawn amount
+
+		return false;
+	}
 	return true;
 }
 
