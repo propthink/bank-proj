@@ -403,6 +403,62 @@ void BAccount::printAllTransactions() const
 }
 
 //
+static std::unordered_set< uint32_t > generated_user_ids;
+
+//
+uint32_t generateUserID()
+{
+	std::random_device random_device;
+
+	std::mt19937 random_generator( random_device() );
+
+	std::uniform_int_distribution<> rng_distribution( 100000, 999999 ); //
+
+	uint32_t new_user_id; //
+
+	//
+	do {
+		new_user_id = rng_distribution( random_generator );
+
+	} while( generated_user_ids.find( new_user_id ) != generated_user_ids.end() );
+
+	generated_user_ids.insert( new_user_id ); //
+
+	return new_user_id;
+}
+
+//
+struct UserInfo
+{
+	UserInfo( const std::string& first_name, const std::string& middle_name,
+
+			  const std::string& last_name, uint32_t user_id,
+
+			  const std::string& phone_number, const std::string& email_address ); //
+
+	std::string m_first_name, m_middle_name, m_last_name; //
+
+	uint32_t m_user_id; //
+
+	std::string m_phone_number; //
+
+	std::string m_email_address; //
+};
+
+//
+UserInfo::UserInfo( const std::string& first_name, const std::string& middle_name,
+
+	const std::string& last_name, uint32_t user_id,
+
+	const std::string& phone_number, const std::string& email_address )
+
+	: m_first_name( first_name ), m_middle_name( middle_name ),
+
+	m_last_name( last_name ), m_user_id ( user_id ),
+
+	m_phone_number( phone_number ), m_email_address( email_address ) { } //
+
+//
 int main()
 {
 	//
