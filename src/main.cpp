@@ -233,6 +233,14 @@ class IAccount
 		virtual uint32_t getAccountNumber() const = 0; //
 
 		virtual int64_t getAccountBalance() const = 0; //
+
+		virtual bool deposit( int64_t deposit_amount ) = 0; //
+
+		virtual bool withdraw( int64_t withdraw_amount ) = 0; //
+
+		virtual void printAccountInfo() const = 0; //
+
+		virtual void printAllTransactions() const = 0; //
 };
 
 //
@@ -244,11 +252,17 @@ class BAccount : public IAccount
 			
 			TransactionHistory&& transaction_history = TransactionHistory() ); //
 
-		virtual ~BAccount(); //
-
 		virtual uint32_t getAccountNumber() const override; //
 
 		virtual int64_t getAccountBalance() const override; //
+
+		virtual bool deposit( int64_t deposit_amount ) override; //
+
+		virtual bool withdraw( int64_t withdraw_amount ) override; //
+
+		virtual void printAccountInfo() const override; //
+
+		virtual void printAllTransactions() const override; //
 
 	private:
 
@@ -273,9 +287,6 @@ BAccount::BAccount( uint32_t account_number, int64_t current_balance,
 	m_transaction_history( std::move( transaction_history ) ) { }
 
 //
-BAccount::~BAccount() { }
-
-//
 uint32_t BAccount::getAccountNumber() const
 {
 	return m_account_number;
@@ -285,6 +296,80 @@ uint32_t BAccount::getAccountNumber() const
 int64_t BAccount::getAccountBalance() const
 {
 	return m_current_balance;
+}
+
+//
+bool BAccount::deposit( int64_t deposit_amount )
+{
+	// check if the deposit amount is valid
+	if( deposit_amount <= 0 )
+	{
+		// invalid deposit amount
+		return false;
+	}
+	// update the balance
+	m_current_balance += deposit_amount;
+
+	// log the deposit transaction
+	m_transaction_history.addTransaction(
+
+		Transaction( m_account_number, deposit_amount ) );
+
+	return true; //
+}
+
+//
+bool BAccount::withdraw( int64_t withdraw_amount )
+{
+	// check if the withdraw amount is valid
+	if( withdraw_amount <= 0 )
+	{
+		// invalid withdraw amount
+		return false;
+	}
+	// check if the balance is sufficent for the withdrawal
+	//if( m_current_balance < withdraw_amount )
+	//{
+		// insufficient funds
+		//return false;
+	//}
+	// update the balance after withdrawal
+	m_current_balance -= withdraw_amount;
+
+	// log the withdrawal transaction
+	m_transaction_history.addTransaction(
+
+		Transaction( m_account_number, -( withdraw_amount ) ) );
+
+	return true;
+}
+
+//
+void BAccount::printAccountInfo() const
+{
+	std::cout << "ACCOUNT #: " << m_account_number;
+
+	std::locale original_locale = std::cout.getloc(); // save current format
+
+	std::cout.imbue( std::locale( "en_US.UTF-8" ) ); // format output
+
+	//std::cout << " | BALANCE: " << ( m_current_balance < 0 ? "-$" : "$" )
+
+		//<< std::put_money( std::abs( m_current_balance ) );
+
+	std::cout << " | BALANCE: " << ( m_current_balance < 0 ? "$(" : "$" )
+
+		<< std::put_money( std::abs( m_current_balance ) )
+
+		<< ( m_current_balance < 0 ? ")" : "" ) << '\n';
+
+	std::cout.imbue( original_locale ); // restore the original format
+}
+
+//
+void BAccount::printAllTransactions() const
+{
+	m_transaction_history.print(); //
 }
 
 //
