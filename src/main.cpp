@@ -484,11 +484,11 @@ class UserAccount
 
 		void addAccount( std::unique_ptr< IAccount > new_account ); //
 
-		bool depositToAccount( uint32_t account_number, int64_t deposit_amount ); //
+		bool depositToAccount(); //
 
-		bool withdrawFromAccount( uint32_t account_number, int64_t deposit_amount ); //
+		void printAllAccountInfo() const; //
 
-		void viewAccountInfo( uint32_t account_number ) const; //
+		uint32_t getUserId() const; //
 
 	private:
 
@@ -509,66 +509,165 @@ void UserAccount::addAccount( std::unique_ptr< IAccount > new_account )
 }
 
 //
-bool UserAccount::depositToAccount( uint32_t account_number, int64_t deposit_amount )
+bool UserAccount::depositToAccount()
 {
-	for( const auto& bank_account : m_bank_accounts )
+	if( m_bank_accounts.empty() )
 	{
-		if( bank_account -> getAccountNumber() == account_number )
-		{
-			bank_account -> deposit( deposit_amount );
+		std::cout << "No accounts available. \n";
 
-			return true;
-		}
+		return false;
 	}
-	return false;
+	// display available accounts
+	std::cout << "Available accounts: \n";
+
+	for( size_t i = 0; i < m_bank_accounts.size(); ++i )
+	{
+		std::cout << "[" << ( i + 1 ) << "]: "; 
+		
+		m_bank_accounts[ i ].get() -> printAccountInfo();
+	}
+	// let the user pick an account
+	size_t user_choice;
+
+	std::cout << "Select an account ( 1 - " << m_bank_accounts.size() << "): ";
+
+	std::cin >> user_choice;
+
+	if( user_choice < 1 || user_choice > m_bank_accounts.size() )
+	{
+		return false; // invalid selection
+	}
+	// ask for deposit amount
+	double dollar_amount;
+
+	std::cout << "Enter deposit amount: $";
+
+	std::cin >> dollar_amount;
+
+	if( dollar_amount <= 0 )
+	{
+		return false; // invaid selection
+	}
+	// convert dollars to cents
+	int64_t deposit_amount = static_cast<int64_t>( dollar_amount * 100 + 0.5 ); //
+
+	// perform deposit on selected account
+	m_bank_accounts[ user_choice - 1 ] -> deposit( deposit_amount );
+
+	return true;
 }
 
 //
-bool UserAccount::withdrawFromAccount( uint32_t account_number, int64_t withdraw_amount )
+void UserAccount::printAllAccountInfo() const
 {
-	for( const auto& bank_account : m_bank_accounts )
+	m_user_info.print();
+
+	for( const auto& current_account : m_bank_accounts )
 	{
-		if( bank_account -> getAccountNumber() == account_number )
+		current_account -> printAccountInfo();
+
+		current_account -> printAllTransactions();
+	}
+}
+
+//
+uint32_t UserAccount::getUserId() const
+{
+	return m_user_info.m_user_id;
+}
+
+//
+class UserAccountNode
+{
+	public:
+
+		UserAccountNode( std::unique_ptr< UserAccount > user_account ); //
+
+		std::unique_ptr< UserAccount > m_user_account; //
+
+		UserAccountNode* m_next; //
+};
+
+//
+UserAccountNode::UserAccountNode( std::unique_ptr< UserAccount > user_account )
+
+	: m_user_account( std::move( user_account ) ), m_next( nullptr ) { } //
+
+//
+class UserAccountList
+{
+	public:
+
+		UserAccountList(); //
+
+		void addUserAccount( std::unique_ptr< UserAccount > user_account ); //
+
+		UserAccount* findUser( uint32_t user_id ) const; //
+
+		void printAllUsers() const;
+
+	private:
+
+		std::unique_ptr< UserAccountNode > m_head; //
+};
+
+//
+UserAccountList::UserAccountList()
+
+	: m_head( nullptr ) { } //
+
+//
+void UserAccountList::addUserAccount( std::unique_ptr< UserAccount > user_account )
+{
+	auto new_node = std::make_unique< UserAccountNode >( std::move( user_account ) );
+
+	if( !m_head )
+	{
+		m_head = std::move( new_node );
+
+	} else
 		{
-			if( bank_account -> withdraw( withdraw_amount ) )
+			UserAccountNode* current_node = m_head.get();
+
+			while( current_node -> m_next )
 			{
-				return true;
-
-			} else
-				{
-					return false;
-				}
+				current_node = current_node -> m_next;
+			}
+			current_node -> m_next = new_node.release(); //
 		}
-	}
-	return false;
 }
 
 //
-void UserAccount::viewAccountInfo( uint32_t account_number ) const
+UserAccount* UserAccountList::findUser( uint32_t user_id ) const
 {
-	for( const auto& bank_account : m_bank_accounts )
-	{
-		if( bank_account -> getAccountNumber() == account_number )
-		{
-			bank_account -> printAccountInfo();
+	UserAccountNode* current_node = m_head.get();
 
-			return;
+	while( current_node )
+	{
+		if( current_node -> m_user_account -> getUserId() == user_id )
+		{
+			return current_node -> m_user_account.get();
 		}
+		current_node = current_node -> m_next;
+	}
+	return nullptr;
+}
+
+//
+void UserAccountList::printAllUsers() const
+{
+	UserAccountNode* current_node = m_head.get();
+
+	while( current_node )
+	{
+		current_node -> m_user_account -> printAllAccountInfo();
+
+		current_node = current_node -> m_next;
 	}
 }
 
 //
 int main()
 {
-	UserAccount user_account( UserInfo(
-
-		"Jim", "Bob", "Cooter", generateUserID(), "9899986969", "deez@nutz.org"
-
-	) );
-
-	user_account.addAccount( std::make_unique< BAccount > (
-
-		generateAccountNumber()
-
-	) );
+	//
 }
