@@ -8,6 +8,7 @@
 #include <memory>
 #include <unordered_set>
 #include <random>
+#include <vector>
 
 //
 std::string generateTimestamp()
@@ -436,6 +437,8 @@ struct UserInfo
 
 			  const std::string& phone_number, const std::string& email_address ); //
 
+	void print() const; //
+
 	std::string m_first_name, m_middle_name, m_last_name; //
 
 	uint32_t m_user_id; //
@@ -459,7 +462,113 @@ UserInfo::UserInfo( const std::string& first_name, const std::string& middle_nam
 	m_phone_number( phone_number ), m_email_address( email_address ) { } //
 
 //
+void UserInfo::print() const
+{
+	std::cout << "NAME: " << m_first_name << " " << m_middle_name
+
+		<< " " << m_last_name;
+
+	std::cout << " | USER ID: " << m_user_id;
+
+	std::cout << " | PHONE: " << m_phone_number;
+
+	std::cout << " | EMAIL: " << m_email_address << '\n';
+}
+
+//
+class UserAccount
+{
+	public:
+
+		UserAccount( const UserInfo& user_info ); //
+
+		void addAccount( std::unique_ptr< IAccount > new_account ); //
+
+		bool depositToAccount( uint32_t account_number, int64_t deposit_amount ); //
+
+		bool withdrawFromAccount( uint32_t account_number, int64_t deposit_amount ); //
+
+		void viewAccountInfo( uint32_t account_number ) const; //
+
+	private:
+
+		UserInfo m_user_info; //
+
+		std::vector< std::unique_ptr< IAccount > > m_bank_accounts; //
+};
+
+//
+UserAccount::UserAccount( const UserInfo& user_info )
+
+	: m_user_info( user_info ) { } //
+
+//
+void UserAccount::addAccount( std::unique_ptr< IAccount > new_account )
+{
+	m_bank_accounts.push_back( std::move( new_account ) );
+}
+
+//
+bool UserAccount::depositToAccount( uint32_t account_number, int64_t deposit_amount )
+{
+	for( const auto& bank_account : m_bank_accounts )
+	{
+		if( bank_account -> getAccountNumber() == account_number )
+		{
+			bank_account -> deposit( deposit_amount );
+
+			return true;
+		}
+	}
+	return false;
+}
+
+//
+bool UserAccount::withdrawFromAccount( uint32_t account_number, int64_t withdraw_amount )
+{
+	for( const auto& bank_account : m_bank_accounts )
+	{
+		if( bank_account -> getAccountNumber() == account_number )
+		{
+			if( bank_account -> withdraw( withdraw_amount ) )
+			{
+				return true;
+
+			} else
+				{
+					return false;
+				}
+		}
+	}
+	return false;
+}
+
+//
+void UserAccount::viewAccountInfo( uint32_t account_number ) const
+{
+	for( const auto& bank_account : m_bank_accounts )
+	{
+		if( bank_account -> getAccountNumber() == account_number )
+		{
+			bank_account -> printAccountInfo();
+
+			return;
+		}
+	}
+}
+
+//
 int main()
 {
-	//
+	UserAccount user_account( UserInfo(
+
+		"Jim", "Bob", "Cooter", generateUserID(), "9899986969", "deez@nutz.org"
+
+	) );
+
+	user_account.addAccount( std::make_unique< BAccount > (
+
+		generateAccountNumber()
+
+	) );
 }
